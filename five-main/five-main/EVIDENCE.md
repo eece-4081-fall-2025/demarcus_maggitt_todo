@@ -3,6 +3,7 @@
 - Python Version: 3.13.2
 - Virtual ENvironment: venv
 
-## Process
-1. Created virtual environment with 'python -m venv venv'
-2. Ran the app
+## Dependencies:
+- asgiref-3.9.2
+- sqlparse-0.5.3
+- django-5.2.6
