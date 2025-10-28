@@ -1,7 +1,7 @@
-## Epic 1: Task Management 
+# Epic 1: Task Management 
 **Goal**: deliver create/read/update/delete + complete toggle for tasks with auth-protected persistence.
 
-# Backend
+## Backend
 1. DB: Add tasks table + migration.
 2. Model: Task ORM model (fields: id, user_id, title, description, due_date, priority, completed, created_at, updated_at).
 3. API: POST /api/tasks (create).
@@ -12,7 +12,7 @@
 8. API: PATCH /api/tasks/:id/complete (toggle complete).
 9. Auth middleware tests to ensure tasks are user-scoped.
 
-# Frontend
+## Frontend
 10. Task List page (fetch & render tasks).
 11. Create Task form + client validation.
 12. Edit Task modal/form (prefilled).
@@ -20,9 +20,9 @@
 14. Delete confirmation & undo toast (optional).
 15. Filter by status (All / Active / Completed) and simple sorting.
 
-# DevOps / CI
+## DevOps / CI
 16. Add test runner to CI (run unit & integration tests).
 17. Add migration & seed scripts for dev.
 
-# QA
+## QA
 18. Write end-to-end test for create→edit→complete→delete flow.
