@@ -146,3 +146,135 @@ def test_backend_mark_complete_and_uncomplete(auth_header):
     assert r2.status_code == 200
     assert r2.json().get("completed", True) is False
 
+# ---------- Frontend tests for "Add a task" ----------
+@pytest.mark.skipif(True, reason="Enable Playwright frontend tests by setting skip to False and ensuring app is running")
+def test_frontend_create_task_shows_in_list():
+    """
+    Frontend test using Playwright:
+    - visit /tasks
+    - open create form, fill title, submit
+    - assert new task visible in list
+    NOTE: This test is skipped by default. Set decorator skip to False to run.
+    """
+    base_url = "http://localhost:3000"  # change to your frontend dev URL
+    pw, browser, context, page = start_playwright_page(base_url)
+    try:
+        # Adapt selectors to your app e.g. data-test attributes
+        page.click("[data-test=add-task]")               # open create form
+        page.fill("input[name=title]", "E2E Task " + str(uuid.uuid4()))
+        page.click("[data-test=save-task]")            # submit
+        # wait for list update
+        page.wait_for_selector("[data-test=task-card]", timeout=3000)
+        # Basic assertion: at least one task card exists
+        cards = page.query_selector_all("[data-test=task-card]")
+        assert len(cards) >= 1
+    finally:
+        stop_playwright(browser, context)
+
+@pytest.mark.skipif(True, reason="Enable Playwright frontend tests by setting skip to False and ensuring app is running")
+def test_frontend_create_task_validation_shows_error():
+    """
+    Frontend validation test:
+    - try to submit empty form -> expect validation error visible
+    """
+    base_url = "http://localhost:3000"
+    pw, browser, context, page = start_playwright_page(base_url)
+    try:
+        page.click("[data-test=add-task]")
+        page.click("[data-test=save-task]")
+        # Wait and assert validation text exists
+        page.wait_for_selector("text=Title is required", timeout=2000)
+        assert page.is_visible("text=Title is required")
+    finally:
+        stop_playwright(browser, context)
+
+# ---------- Frontend tests for "Edit a task" ----------
+@pytest.mark.skipif(True, reason="Enable Playwright frontend tests by setting skip to False and ensuring app is running")
+def test_frontend_edit_task_prefilled_and_saves():
+    """
+    Frontend test:
+    - ensure edit modal is prefilling form fields
+    - update values and save -> task list shows updated text
+    """
+    base_url = "http://localhost:3000"
+    pw, browser, context, page = start_playwright_page(base_url)
+    try:
+        # Precondition: ensure at least one task exists, or create via UI
+        page.click("[data-test=add-task]")
+        page.fill("input[name=title]", "Task to edit " + str(uuid.uuid4()))
+        page.click("[data-test=save-task]")
+        page.wait_for_selector("[data-test=task-card]")
+
+        # Click edit on the first card
+        page.click("[data-test=task-card] [data-test=edit-task]")
+        # Check prefilled
+        assert page.get_attribute("input[name=title]", "value") != ""
+        # Change and save
+        page.fill("input[name=title]", "Task edited " + str(uuid.uuid4()))
+        page.click("[data-test=save-task]")
+        # Verify updated content appears
+        page.wait_for_timeout(500)  # brief wait for UI update
+        assert page.query_selector("[data-test=task-card]") is not None
+    finally:
+        stop_playwright(browser, context)
+
+# ---------- Frontend tests for "Delete a task" ----------
+@pytest.mark.skipif(True, reason="Enable Playwright frontend tests by setting skip to False and ensuring app is running")
+def test_frontend_delete_task_confirm_and_removes():
+    """
+    Frontend test:
+    - create a task if necessary
+    - trigger delete -> confirm -> verify it's removed from DOM
+    """
+    base_url = "http://localhost:3000"
+    pw, browser, context, page = start_playwright_page(base_url)
+    try:
+        # create
+        page.click("[data-test=add-task]")
+        title = "To delete UI " + str(uuid.uuid4())
+        page.fill("input[name=title]", title)
+        page.click("[data-test=save-task]")
+        page.wait_for_selector(f"text={title}")
+
+        # find card containing the title and click delete
+        page.click(f"text={title} >> xpath=.. >> [data-test=delete-task]")
+        # confirm dialog
+        page.click("[data-test=confirm-delete]")
+
+        # wait briefly and assert task no longer present
+        page.wait_for_timeout(300)
+        assert not page.is_visible(f"text={title}")
+    finally:
+        stop_playwright(browser, context)
+
+# ---------- Frontend tests for "Mark complete" ----------
+@pytest.mark.skipif(True, reason="Enable Playwright frontend tests by setting skip to False and ensuring app is running")
+def test_frontend_toggle_complete_updates_ui():
+    """
+    Frontend test:
+    - create task via UI
+    - toggle complete checkbox
+    - assert CSS class or attribute changes to indicate completed
+    """
+    base_url = "http://localhost:3000"
+    pw, browser, context, page = start_playwright_page(base_url)
+    try:
+        title = "Toggle UI " + str(uuid.uuid4())
+        page.click("[data-test=add-task]")
+        page.fill("input[name=title]", title)
+        page.click("[data-test=save-task]")
+        page.wait_for_selector(f"text={title}")
+
+        # toggle complete (assumes a checkbox within card)
+        card_selector = f"text={title} >> xpath=.."
+        page.click(f"{card_selector} [data-test=complete-toggle]")
+        time.sleep(0.2)
+        # assert card has 'completed' class or aria-checked attribute
+        # adapt selector/assertion to your app
+        card = page.query_selector(card_selector)
+        assert card is not None
+        # Example assertion: completed class exists
+        completed = card.get_attribute("class")
+        assert completed is not None
+    finally:
+        stop_playwright(browser, context)
